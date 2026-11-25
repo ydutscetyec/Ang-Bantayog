@@ -1,327 +1,370 @@
 <?php
 /**
- * Homepage: a dense, multi-column news portal.
+ * Homepage.
  *
- * Layout map
- *   Daglian ....... scrolling headline strip
- *   Lead grid ..... Pangunahing Istorya / Mga Pinili ng Editor / Kuwentong Sikat
- *   Balita ........ five-across card row
- *   Lente ......... featured multimedia post + section promo
- *   Kolum ......... Opinyon / Lathalain columns + Napapanahon-Laganap sidebar
- *   Isports ....... wide feature slider
+ * Block order, and where each one comes from:
  *
- * Editor's Picks reads WordPress sticky posts; Kuwentong Sikat and Laganap
- * rank by comment count. Every section degrades to an empty-state card so a
- * thin site still looks finished.
+ *   1. Hero carousel ............ DOST rotating featured banner
+ *   2. Cover + tagline .......... InsightPH hero cover
+ *   3. Lede (featured + latest) .. InsiderPH "Featured From" / "Latest From"
+ *   4. Trending chips ........... InsiderPH topic row
+ *   5. Timeline ................. InsiderPH live feed with Load More
+ *   6. Editors' Pick / Popular .. InsiderPH curated + most-read rails
+ *   7. Fact Check ............... Rappler verdict cards
+ *   8. Category sections ........ InsightPH stacked sections, "explore all"
+ *   9. Document library ......... DOST transparency downloads
+ *  10. Partners ................. DOST affiliate strip / InsightPH network block
+ *
+ * Every block is individually switchable in Appearance → Customize, and each
+ * one self-hides when it has no content, so a fresh install is never a page of
+ * empty headings.
+ *
+ * @package Ang_Bantayog
  */
+
 get_header();
 
-$used = array();
-
-$daglian  = angbantayog_feed( 5 );
-$lead     = angbantayog_feed( 3 );
-$lead_ids = wp_list_pluck( $lead->posts, 'ID' );
-$used     = array_merge( $used, $lead_ids );
-
-$picks = new WP_Query( array(
-	'posts_per_page'      => 2,
-	'post__in'            => get_option( 'sticky_posts' ) ? get_option( 'sticky_posts' ) : array(),
-	'post__not_in'        => $used,
-	'ignore_sticky_posts' => true,
-	'no_found_rows'       => true,
-) );
-if ( ! $picks->have_posts() ) {
-	$picks = angbantayog_feed( 2, $used );
-}
-$used = array_merge( $used, wp_list_pluck( $picks->posts, 'ID' ) );
-
-$sikat = angbantayog_popular( 5 );
+/* IDs already placed on the page, so nothing repeats further down. */
+$ab_used = array();
 ?>
 
-<main class="home">
+<main class="home" id="top">
 
-  <section class="daglian" aria-label="<?php esc_attr_e( 'Pinakabagong balita', 'ang-bantayog' ); ?>">
-    <div class="container daglian__inner">
-      <span class="daglian__tag"><?php esc_html_e( 'DAGLIAN', 'ang-bantayog' ); ?></span>
-      <div class="daglian__viewport">
-        <div class="daglian__track" id="daglianTrack">
-          <?php if ( $daglian->have_posts() ) : while ( $daglian->have_posts() ) : $daglian->the_post(); ?>
-            <a class="daglian__item" href="<?php the_permalink(); ?>">
-              <span class="daglian__dot" aria-hidden="true"></span>
-              <?php the_title(); ?>
-            </a>
-          <?php endwhile; wp_reset_postdata(); else : ?>
-            <span class="daglian__item"><?php esc_html_e( 'Maligayang pagdating sa digital home ng ANG BANTAYOG.', 'ang-bantayog' ); ?></span>
-          <?php endif; ?>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="container lead-grid" aria-label="<?php esc_attr_e( 'Mga pangunahing kuwento', 'ang-bantayog' ); ?>">
-
-    <div class="lead-main">
-      <div class="band-head">
-        <h2><?php esc_html_e( 'Pangunahing Istorya', 'ang-bantayog' ); ?></h2>
-        <div class="slider-nav">
-          <button class="slider-btn" data-slider="lead" data-dir="prev" aria-label="<?php esc_attr_e( 'Naunang kuwento', 'ang-bantayog' ); ?>">&#8249;</button>
-          <button class="slider-btn" data-slider="lead" data-dir="next" aria-label="<?php esc_attr_e( 'Susunod na kuwento', 'ang-bantayog' ); ?>">&#8250;</button>
-        </div>
-      </div>
-      <div class="slider" data-slider-track="lead">
-        <?php if ( $lead->have_posts() ) : $i = 0; while ( $lead->have_posts() ) : $lead->the_post(); ?>
-          <article class="hero-card slide<?php echo 0 === $i ? ' is-active' : ''; ?>">
-            <a class="hero-card__media" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true">
-              <?php angbantayog_post_thumb( get_the_ID(), 'angbantayog-featured', $i, '' ); ?>
-            </a>
-            <div class="hero-card__body">
-              <p class="tag-row">
-                <span class="tag tag--solid"><?php echo esc_html( angbantayog_badge_label( get_the_ID() ) ); ?></span>
-                <span class="tag"><?php esc_html_e( 'Pangunahing Istorya', 'ang-bantayog' ); ?></span>
-              </p>
-              <h3 class="hero-card__title"><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
-              <p class="byline"><?php echo esc_html( get_the_author() ); ?> &middot; <?php echo esc_html( get_the_date() ); ?> &middot; <?php echo esc_html( angbantayog_reading_time( get_the_ID() ) ); ?></p>
-            </div>
-          </article>
-        <?php $i++; endwhile; wp_reset_postdata(); else : ?>
-          <article class="hero-card slide is-active">
-            <div class="hero-card__media"><img src="<?php echo esc_url( angbantayog_fallback_thumb( 0 ) ); ?>" alt="" /></div>
-            <div class="hero-card__body">
-              <p class="tag-row"><span class="tag tag--solid"><?php esc_html_e( 'Balita', 'ang-bantayog' ); ?></span></p>
-              <h3 class="hero-card__title"><?php esc_html_e( 'Wala pang nailathalang kuwento', 'ang-bantayog' ); ?></h3>
-              <p class="byline"><?php esc_html_e( 'I-publish ang unang artikulo para mapunan ang espasyong ito.', 'ang-bantayog' ); ?></p>
-            </div>
-          </article>
-        <?php endif; ?>
-      </div>
-    </div>
-
-    <div class="lead-picks">
-      <div class="band-head"><h2><?php esc_html_e( 'Mga Pinili ng Editor', 'ang-bantayog' ); ?></h2></div>
-      <?php if ( $picks->have_posts() ) : $i = 1; while ( $picks->have_posts() ) : $picks->the_post(); ?>
-        <article class="pick-card">
-          <a class="pick-card__media" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true">
-            <?php angbantayog_post_thumb( get_the_ID(), 'angbantayog-wide', $i, '' ); ?>
-          </a>
-          <div class="pick-card__body">
-            <p class="tag-row"><span class="tag tag--solid"><?php echo esc_html( angbantayog_badge_label( get_the_ID() ) ); ?></span><span class="tag"><?php esc_html_e( 'Pinili ng Editor', 'ang-bantayog' ); ?></span></p>
-            <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
-            <p class="byline"><?php echo esc_html( get_the_author() ); ?> &middot; <?php echo esc_html( get_the_date() ); ?></p>
-          </div>
-        </article>
-      <?php $i++; endwhile; wp_reset_postdata(); else : ?>
-        <article class="pick-card pick-card--empty">
-          <div class="pick-card__body">
-            <h3><?php esc_html_e( 'Wala pang pinili ang editor', 'ang-bantayog' ); ?></h3>
-            <p class="byline"><?php esc_html_e( 'I-sticky ang isang post para itampok ito rito.', 'ang-bantayog' ); ?></p>
-          </div>
-        </article>
-      <?php endif; ?>
-    </div>
-
-    <div class="lead-sikat">
-      <div class="band-head"><h2><?php esc_html_e( 'Kuwentong Sikat', 'ang-bantayog' ); ?></h2></div>
-      <ol class="rank-list">
-        <?php if ( $sikat->have_posts() ) : $i = 1; while ( $sikat->have_posts() ) : $sikat->the_post(); ?>
-          <li class="rank">
-            <span class="rank__num" aria-hidden="true"><?php echo esc_html( $i ); ?></span>
-            <a class="rank__media" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true">
-              <?php angbantayog_post_thumb( get_the_ID(), 'angbantayog-wide', $i, '' ); ?>
-            </a>
-            <div class="rank__body">
-              <p class="eyebrow"><?php echo esc_html( angbantayog_badge_label( get_the_ID() ) ); ?></p>
-              <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
-            </div>
-          </li>
-        <?php $i++; endwhile; wp_reset_postdata(); else : ?>
-          <li class="rank rank--empty"><?php esc_html_e( 'Lalabas dito ang pinakabinabasang kuwento.', 'ang-bantayog' ); ?></li>
-        <?php endif; ?>
-      </ol>
-    </div>
-
-  </section>
-
-  <?php $balita = angbantayog_section_query( 'balita', 5 ); ?>
-  <section class="container band" id="balita">
-    <div class="band-head">
-      <h2><?php esc_html_e( 'Balita', 'ang-bantayog' ); ?></h2>
-      <a class="band-more" href="<?php echo esc_url( angbantayog_section_url( 'balita' ) ); ?>"><?php esc_html_e( 'Tingnan lahat', 'ang-bantayog' ); ?></a>
-    </div>
-    <div class="card-row">
-      <?php if ( $balita->have_posts() ) : $i = 0; while ( $balita->have_posts() ) : $balita->the_post(); ?>
-        <article class="card">
-          <a class="card__media" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true">
-            <?php angbantayog_post_thumb( get_the_ID(), 'angbantayog-wide', $i, '' ); ?>
-            <span class="tag tag--solid tag--pinned"><?php esc_html_e( 'Balita', 'ang-bantayog' ); ?></span>
-          </a>
-          <h3 class="card__title"><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
-          <p class="byline"><?php echo esc_html( get_the_author() ); ?> &middot; <?php echo esc_html( get_the_date() ); ?></p>
-        </article>
-      <?php $i++; endwhile; wp_reset_postdata(); else : ?>
-        <p class="empty"><?php esc_html_e( 'Wala pang artikulo sa Balita. Gumawa ng post at itakda ang category nito sa "Balita".', 'ang-bantayog' ); ?></p>
-      <?php endif; ?>
-    </div>
-  </section>
-
-  <?php $lente = angbantayog_section_query( 'multimedia', 1 ); ?>
-  <section class="container lente-grid" id="multimedia">
-    <div class="lente-main">
-      <div class="band-head"><h2><?php esc_html_e( 'Lente Bantayog', 'ang-bantayog' ); ?></h2></div>
-      <?php if ( $lente->have_posts() ) : while ( $lente->have_posts() ) : $lente->the_post(); ?>
-        <article class="lente-card">
-          <a class="lente-card__media" href="<?php the_permalink(); ?>">
-            <?php angbantayog_post_thumb( get_the_ID(), 'angbantayog-featured', 4, '' ); ?>
-            <span class="play" aria-hidden="true"></span>
-          </a>
-          <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
-        </article>
-      <?php endwhile; wp_reset_postdata(); else : ?>
-        <article class="lente-card">
-          <div class="lente-card__media"><img src="<?php echo esc_url( angbantayog_fallback_thumb( 4 ) ); ?>" alt="" /><span class="play" aria-hidden="true"></span></div>
-          <h3><?php esc_html_e( 'Wala pang multimedia na nailathala', 'ang-bantayog' ); ?></h3>
-          <p class="byline"><?php esc_html_e( 'Itakda ang category ng isang post sa "Multimedia" para lumabas ito rito.', 'ang-bantayog' ); ?></p>
-        </article>
-      <?php endif; ?>
-    </div>
-    <aside class="promo">
-      <img class="promo__seal" src="<?php echo esc_url( get_template_directory_uri() . '/assets/ang-bantayog-seal.png' ); ?>" alt="" />
-      <p class="promo__kicker"><?php esc_html_e( 'Tinig ng mag-aaral', 'ang-bantayog' ); ?></p>
-      <blockquote class="promo__quote"><?php esc_html_e( 'Ang pahayagan ng paaralan ay hindi palamuti. Ito ay boses, tala, at tungkulin.', 'ang-bantayog' ); ?></blockquote>
-      <a class="promo__cta" href="<?php echo esc_url( angbantayog_section_url( 'opinyon' ) ); ?>"><?php esc_html_e( 'Basahin ang Opinyon', 'ang-bantayog' ); ?></a>
-    </aside>
-  </section>
-
+  <?php /* ============================== 1. Hero carousel ============================== */ ?>
   <?php
-  $opinyon   = angbantayog_section_query( 'opinyon', 4 );
-  $lathalain = angbantayog_section_query( 'lathalain', 5 );
-  $bago      = angbantayog_feed( 4 );
-  $laganap   = angbantayog_popular( 4 );
+  if ( angbantayog_show( 'ab_show_carousel' ) ) :
+    $ab_carousel = new WP_Query( array(
+      'posts_per_page'      => 4,
+      'post_status'         => 'publish',
+      'ignore_sticky_posts' => false,
+      'no_found_rows'       => true,
+      'meta_query'          => array(
+        'relation' => 'OR',
+        array( 'key' => '_ab_editors_pick', 'value' => '1' ),
+        array( 'key' => '_ab_editors_pick', 'compare' => 'NOT EXISTS' ),
+      ),
+    ) );
+
+    if ( $ab_carousel->have_posts() ) : ?>
+      <section class="carousel" aria-label="<?php esc_attr_e( 'Mga pangunahing balita', 'ang-bantayog' ); ?>">
+        <div class="carousel__viewport" id="heroCarousel">
+          <?php
+          $ab_slide = 0;
+          while ( $ab_carousel->have_posts() ) :
+            $ab_carousel->the_post();
+            $ab_used[] = get_the_ID();
+            ?>
+            <article class="slide<?php echo 0 === $ab_slide ? ' is-active' : ''; ?>"
+                     role="group" aria-roledescription="slide"
+                     aria-label="<?php echo esc_attr( sprintf( '%d / %d', $ab_slide + 1, $ab_carousel->post_count ) ); ?>">
+              <div class="slide__media"><?php angbantayog_post_thumb( get_the_ID(), 'angbantayog-featured', $ab_slide ); ?></div>
+              <div class="slide__wash" aria-hidden="true"></div>
+              <div class="container slide__body">
+                <p class="slide__kicker">
+                  <a class="badge badge--solid" href="<?php echo esc_url( angbantayog_badge_url( get_the_ID() ) ); ?>">
+                    <?php echo esc_html( angbantayog_badge_label( get_the_ID() ) ); ?>
+                  </a>
+                  <?php if ( angbantayog_is_live( get_the_ID() ) ) : ?>
+                    <span class="badge badge--live"><?php esc_html_e( 'LIVE', 'ang-bantayog' ); ?></span>
+                  <?php endif; ?>
+                </p>
+                <h2 class="slide__title"><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h2>
+                <p class="slide__deck"><?php echo esc_html( angbantayog_deck( get_the_ID(), 34 ) ); ?></p>
+                <p class="slide__meta">
+                  <span class="byline"><?php echo wp_kses_post( angbantayog_byline( get_the_ID() ) ); ?></span>
+                  <span class="dot" aria-hidden="true">&middot;</span>
+                  <?php echo esc_html( angbantayog_relative_time( get_the_ID() ) ); ?>
+                </p>
+              </div>
+            </article>
+            <?php
+            $ab_slide++;
+          endwhile;
+          ?>
+        </div>
+
+        <button class="carousel__nav carousel__nav--prev" data-carousel-prev
+                aria-label="<?php esc_attr_e( 'Nakaraang balita', 'ang-bantayog' ); ?>">&#8249;</button>
+        <button class="carousel__nav carousel__nav--next" data-carousel-next
+                aria-label="<?php esc_attr_e( 'Susunod na balita', 'ang-bantayog' ); ?>">&#8250;</button>
+
+        <div class="carousel__dots" role="tablist" aria-label="<?php esc_attr_e( 'Pumili ng slide', 'ang-bantayog' ); ?>">
+          <?php for ( $i = 0; $i < $ab_slide; $i++ ) : ?>
+            <button role="tab" class="carousel__dot<?php echo 0 === $i ? ' is-active' : ''; ?>"
+                    data-carousel-dot="<?php echo esc_attr( $i ); ?>"
+                    aria-selected="<?php echo 0 === $i ? 'true' : 'false'; ?>"
+                    aria-label="<?php echo esc_attr( sprintf( __( 'Slide %d', 'ang-bantayog' ), $i + 1 ) ); ?>"></button>
+          <?php endfor; ?>
+        </div>
+      </section>
+    <?php endif;
+    wp_reset_postdata();
+  endif;
   ?>
-  <section class="container kolum-grid">
 
-    <div class="kolum" id="opinyon">
-      <div class="band-head">
-        <h2><?php esc_html_e( 'Opinyon', 'ang-bantayog' ); ?></h2>
-        <a class="band-more" href="<?php echo esc_url( angbantayog_section_url( 'opinyon' ) ); ?>"><?php esc_html_e( 'Lahat', 'ang-bantayog' ); ?></a>
-      </div>
-      <?php if ( $opinyon->have_posts() ) : $i = 0; while ( $opinyon->have_posts() ) : $opinyon->the_post(); ?>
-        <?php if ( 0 === $i ) : ?>
-          <article class="opinion-lead">
-            <a class="opinion-lead__media" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true">
-              <?php angbantayog_post_thumb( get_the_ID(), 'angbantayog-wide', 0, '' ); ?>
-            </a>
-            <div class="opinion-lead__body">
-              <p class="tag-row"><span class="tag tag--solid"><?php esc_html_e( 'Editoryal', 'ang-bantayog' ); ?></span></p>
-              <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
-              <p class="byline"><?php echo esc_html( get_the_author() ); ?> &middot; <?php echo esc_html( get_the_date() ); ?></p>
-            </div>
-          </article>
-        <?php else : ?>
-          <article class="kolum-card">
-            <blockquote class="kolum-card__pull"><?php echo esc_html( wp_trim_words( get_the_excerpt(), 18 ) ); ?></blockquote>
-            <div class="kolum-card__body">
-              <p class="eyebrow"><?php esc_html_e( 'Kolum', 'ang-bantayog' ); ?> &middot; <?php echo esc_html( angbantayog_badge_label( get_the_ID() ) ); ?></p>
-              <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
-              <p class="byline"><?php echo esc_html( get_the_author() ); ?></p>
-            </div>
-          </article>
+  <?php /* ============================== 2. Cover + tagline ============================= */ ?>
+  <?php if ( angbantayog_show( 'ab_show_cover' ) ) : ?>
+    <section class="cover" aria-label="<?php esc_attr_e( 'Tungkol sa pahayagan', 'ang-bantayog' ); ?>">
+      <img class="cover__bg" src="<?php echo esc_url( angbantayog_cover_url() ); ?>" alt="" loading="lazy" />
+      <div class="cover__wash" aria-hidden="true"></div>
+      <div class="container cover__inner">
+        <h1 class="cover__title"><?php bloginfo( 'name' ); ?></h1>
+        <p class="cover__tagline">
+          <?php echo wp_kses_post( get_theme_mod( 'ab_tagline', __( 'Lampas sa headline, lampas sa ingay — kung saan nagtatagpo ang lalim, katotohanan, at matapang na pagkukuwento.', 'ang-bantayog' ) ) ); ?>
+        </p>
+        <?php $ab_socials = angbantayog_social_links(); ?>
+        <?php if ( $ab_socials ) : ?>
+          <div class="cover__social">
+            <?php foreach ( $ab_socials as $ab_s ) : ?>
+              <a href="<?php echo esc_url( $ab_s['url'] ); ?>" target="_blank" rel="noopener me">
+                <?php echo esc_html( $ab_s['label'] ); ?>
+              </a>
+            <?php endforeach; ?>
+          </div>
         <?php endif; ?>
-      <?php $i++; endwhile; wp_reset_postdata(); else : ?>
-        <p class="empty"><?php esc_html_e( 'Wala pang opinyon na nailathala.', 'ang-bantayog' ); ?></p>
-      <?php endif; ?>
-    </div>
-
-    <div class="kolum" id="lathalain">
-      <div class="band-head">
-        <h2><?php esc_html_e( 'Lathalain', 'ang-bantayog' ); ?></h2>
-        <a class="band-more" href="<?php echo esc_url( angbantayog_section_url( 'lathalain' ) ); ?>"><?php esc_html_e( 'Lahat', 'ang-bantayog' ); ?></a>
       </div>
-      <?php if ( $lathalain->have_posts() ) : $i = 1; while ( $lathalain->have_posts() ) : $lathalain->the_post(); ?>
-        <article class="list-item">
-          <a class="list-item__media" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true">
-            <?php angbantayog_post_thumb( get_the_ID(), 'angbantayog-wide', $i, '' ); ?>
-          </a>
-          <div class="list-item__body">
-            <p class="eyebrow"><?php echo esc_html( angbantayog_badge_label( get_the_ID() ) ); ?></p>
-            <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
-            <p class="byline"><?php echo esc_html( get_the_author() ); ?> &middot; <?php echo esc_html( get_the_date() ); ?></p>
-          </div>
-        </article>
-      <?php $i++; endwhile; wp_reset_postdata(); else : ?>
-        <p class="empty"><?php esc_html_e( 'Wala pang lathalain na nailathala.', 'ang-bantayog' ); ?></p>
-      <?php endif; ?>
-    </div>
+    </section>
+  <?php endif; ?>
 
-    <aside class="kolum-side">
-      <div class="tabs" id="sideTabs">
-        <div class="tabs__bar" role="tablist">
-          <button class="tabs__btn is-active" role="tab" aria-selected="true" aria-controls="tab-bago" id="btn-bago"><?php esc_html_e( 'Napapanahon', 'ang-bantayog' ); ?></button>
-          <button class="tabs__btn" role="tab" aria-selected="false" aria-controls="tab-laganap" id="btn-laganap"><?php esc_html_e( 'Laganap', 'ang-bantayog' ); ?></button>
-        </div>
-        <div class="tabs__panel is-active" id="tab-bago" role="tabpanel" aria-labelledby="btn-bago">
-          <?php if ( $bago->have_posts() ) : $i = 1; while ( $bago->have_posts() ) : $bago->the_post(); ?>
-            <article class="side-item">
-              <a class="side-item__media" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true"><?php angbantayog_post_thumb( get_the_ID(), 'angbantayog-wide', $i, '' ); ?></a>
-              <div>
-                <p class="eyebrow"><?php echo esc_html( angbantayog_badge_label( get_the_ID() ) ); ?></p>
-                <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
-              </div>
+  <div class="container">
+
+    <?php /* ========================= 3. Lede: featured + latest ====================== */ ?>
+    <?php
+    $ab_featured = angbantayog_feed( 1, $ab_used );
+    if ( $ab_featured->have_posts() ) : ?>
+      <section class="lede" aria-label="<?php esc_attr_e( 'Mga itinatampok', 'ang-bantayog' ); ?>">
+        <div class="lede__main">
+          <?php get_template_part( 'template-parts/section-heading', null, array(
+            'title' => __( 'Itinatampok', 'ang-bantayog' ),
+          ) ); ?>
+          <?php
+          while ( $ab_featured->have_posts() ) :
+            $ab_featured->the_post();
+            $ab_used[] = get_the_ID();
+            ?>
+            <article class="feature">
+              <a class="feature__media" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true">
+                <?php angbantayog_post_thumb( get_the_ID(), 'angbantayog-featured', 1 ); ?>
+              </a>
+              <p class="card__kicker">
+                <a class="badge" href="<?php echo esc_url( angbantayog_badge_url( get_the_ID() ) ); ?>">
+                  <?php echo esc_html( angbantayog_badge_label( get_the_ID() ) ); ?>
+                </a>
+                <?php $ab_ser = angbantayog_series_label( get_the_ID() ); ?>
+                <?php if ( $ab_ser ) : ?><span class="series"><?php echo esc_html( $ab_ser ); ?></span><?php endif; ?>
+              </p>
+              <h2 class="feature__title"><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h2>
+              <p class="feature__deck"><?php echo esc_html( angbantayog_deck( get_the_ID(), 42 ) ); ?></p>
+              <p class="card__meta">
+                <span class="byline"><?php echo wp_kses_post( angbantayog_byline( get_the_ID() ) ); ?></span>
+                <span class="dot" aria-hidden="true">&middot;</span>
+                <time datetime="<?php echo esc_attr( get_the_date( 'c' ) ); ?>"><?php echo esc_html( angbantayog_relative_time( get_the_ID() ) ); ?></time>
+                <span class="dot" aria-hidden="true">&middot;</span>
+                <?php echo esc_html( angbantayog_reading_time( get_the_ID() ) ); ?>
+              </p>
             </article>
-          <?php $i++; endwhile; wp_reset_postdata(); else : ?>
-            <p class="empty"><?php esc_html_e( 'Wala pang bagong artikulo.', 'ang-bantayog' ); ?></p>
-          <?php endif; ?>
+          <?php endwhile; ?>
         </div>
-        <div class="tabs__panel" id="tab-laganap" role="tabpanel" aria-labelledby="btn-laganap" hidden>
-          <?php if ( $laganap->have_posts() ) : $i = 2; while ( $laganap->have_posts() ) : $laganap->the_post(); ?>
-            <article class="side-item">
-              <a class="side-item__media" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true"><?php angbantayog_post_thumb( get_the_ID(), 'angbantayog-wide', $i, '' ); ?></a>
-              <div>
-                <p class="eyebrow"><?php echo esc_html( angbantayog_badge_label( get_the_ID() ) ); ?></p>
-                <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
-              </div>
-            </article>
-          <?php $i++; endwhile; wp_reset_postdata(); else : ?>
-            <p class="empty"><?php esc_html_e( 'Wala pang laganap na kuwento.', 'ang-bantayog' ); ?></p>
-          <?php endif; ?>
+
+        <aside class="lede__rail">
+          <?php
+          $ab_latest = angbantayog_feed( 5, $ab_used );
+          if ( $ab_latest->have_posts() ) : ?>
+            <?php get_template_part( 'template-parts/section-heading', null, array(
+              'title' => __( 'Pinakabago', 'ang-bantayog' ),
+              'url'   => get_page_by_path( 'mga-artikulo' ) ? get_permalink( get_page_by_path( 'mga-artikulo' ) ) : '',
+            ) ); ?>
+            <?php get_template_part( 'template-parts/ranked-list', null, array(
+              'query'    => $ab_latest,
+              'numbered' => false,
+            ) ); ?>
+            <?php
+            // ranked-list resets postdata; collect the IDs it used.
+            foreach ( $ab_latest->posts as $ab_p ) { $ab_used[] = $ab_p->ID; }
+          endif;
+          ?>
+        </aside>
+      </section>
+    <?php endif;
+    wp_reset_postdata();
+    ?>
+
+    <?php /* ============================ 4. Trending chips ============================ */ ?>
+    <?php if ( angbantayog_show( 'ab_show_trending' ) ) : ?>
+      <?php get_template_part( 'template-parts/chips' ); ?>
+    <?php endif; ?>
+
+    <?php /* ======================= 5. Timeline + 6. rails (two-up) ==================== */ ?>
+    <div class="homegrid">
+
+      <?php if ( angbantayog_show( 'ab_show_timeline' ) ) :
+        $ab_tl_count = (int) get_theme_mod( 'ab_timeline_count', 8 );
+        $ab_timeline = angbantayog_feed( $ab_tl_count, $ab_used );
+        if ( $ab_timeline->have_posts() ) : ?>
+          <section class="timeline" id="timeline" aria-label="<?php esc_attr_e( 'Timeline', 'ang-bantayog' ); ?>">
+            <?php get_template_part( 'template-parts/section-heading', null, array(
+              'title' => __( 'Ang Timeline', 'ang-bantayog' ),
+              'sub'   => date_i18n( 'l, F j, Y' ),
+            ) ); ?>
+
+            <ul class="timeline__list" id="timelineList">
+              <?php
+              $ab_i = 0;
+              while ( $ab_timeline->have_posts() ) :
+                $ab_timeline->the_post();
+                $ab_used[] = get_the_ID();
+                set_query_var( 'ab_card_index', $ab_i++ );
+                get_template_part( 'template-parts/card-timeline' );
+              endwhile;
+              ?>
+            </ul>
+
+            <button type="button" class="btn btn--ghost loadmore"
+                    data-loadmore="timeline"
+                    data-target="#timelineList"
+                    data-per-page="<?php echo esc_attr( $ab_tl_count ); ?>"
+                    data-page="1">
+              <?php esc_html_e( 'Magkarga pa', 'ang-bantayog' ); ?>
+            </button>
+          </section>
+        <?php endif;
+        wp_reset_postdata();
+      endif; ?>
+
+      <aside class="homerail">
+        <?php /* Editors' Pick */ ?>
+        <?php if ( angbantayog_show( 'ab_show_picks' ) ) :
+          $ab_picks = angbantayog_editors_picks( 5 );
+          if ( $ab_picks->have_posts() ) : ?>
+            <section class="panel">
+              <?php get_template_part( 'template-parts/section-heading', null, array(
+                'title' => __( "Editors' Pick", 'ang-bantayog' ),
+              ) ); ?>
+              <?php get_template_part( 'template-parts/ranked-list', null, array( 'query' => $ab_picks ) ); ?>
+            </section>
+          <?php endif;
+          wp_reset_postdata();
+        endif; ?>
+
+        <?php /* Most read */ ?>
+        <?php
+        $ab_popular = angbantayog_popular( 5 );
+        if ( $ab_popular->have_posts() ) : ?>
+          <section class="panel">
+            <?php get_template_part( 'template-parts/section-heading', null, array(
+              'title' => __( 'Pinakatinatalakay', 'ang-bantayog' ),
+            ) ); ?>
+            <?php get_template_part( 'template-parts/ranked-list', null, array( 'query' => $ab_popular ) ); ?>
+          </section>
+        <?php endif;
+        wp_reset_postdata();
+        ?>
+      </aside>
+    </div>
+
+    <?php /* ============================== 7. Fact Check ============================== */ ?>
+    <?php if ( angbantayog_show( 'ab_show_factcheck' ) ) :
+      $ab_facts = angbantayog_cpt_query( 'ab_factcheck', 3 );
+      if ( $ab_facts->have_posts() ) : ?>
+        <section class="factsec" aria-label="<?php esc_attr_e( 'Fact Check', 'ang-bantayog' ); ?>">
+          <?php get_template_part( 'template-parts/section-heading', null, array(
+            'title' => __( 'Fact Check', 'ang-bantayog' ),
+            'sub'   => __( 'Sinusuri ang mga pahayag na kumakalat.', 'ang-bantayog' ),
+            'url'   => get_post_type_archive_link( 'ab_factcheck' ),
+          ) ); ?>
+          <div class="grid grid--3">
+            <?php while ( $ab_facts->have_posts() ) : $ab_facts->the_post();
+              get_template_part( 'template-parts/card-factcheck' );
+            endwhile; ?>
+          </div>
+        </section>
+      <?php endif;
+      wp_reset_postdata();
+    endif; ?>
+
+    <?php /* ========================== 8. Stacked category sections =================== */ ?>
+    <?php foreach ( angbantayog_home_sections() as $ab_section ) :
+      $ab_sq = angbantayog_section_query( $ab_section->slug, 3, $ab_used );
+      if ( ! $ab_sq->have_posts() ) { wp_reset_postdata(); continue; }
+      ?>
+      <section class="homesection" id="<?php echo esc_attr( $ab_section->slug ); ?>">
+        <?php get_template_part( 'template-parts/section-heading', null, array(
+          'title' => $ab_section->name,
+          'url'   => get_category_link( $ab_section ),
+          'sub'   => $ab_section->description ? wp_strip_all_tags( $ab_section->description ) : '',
+        ) ); ?>
+        <div class="grid grid--3">
+          <?php
+          $ab_i = 0;
+          while ( $ab_sq->have_posts() ) :
+            $ab_sq->the_post();
+            $ab_used[] = get_the_ID();
+            set_query_var( 'ab_card_index', $ab_i++ );
+            get_template_part( 'template-parts/card-article' );
+          endwhile;
+          ?>
         </div>
-      </div>
-    </aside>
+      </section>
+      <?php wp_reset_postdata(); ?>
+    <?php endforeach; ?>
 
-  </section>
+    <?php /* ============================ 9. Document library =========================== */ ?>
+    <?php if ( angbantayog_show( 'ab_show_documents' ) ) :
+      $ab_docs = angbantayog_cpt_query( 'ab_document', 5, array(
+        'meta_key' => '_ab_doc_date',
+        'orderby'  => array( 'meta_value' => 'DESC', 'date' => 'DESC' ),
+      ) );
+      if ( ! $ab_docs->have_posts() ) {
+        wp_reset_postdata();
+        $ab_docs = angbantayog_cpt_query( 'ab_document', 5 );
+      }
+      if ( $ab_docs->have_posts() ) : ?>
+        <section class="docsec" aria-label="<?php esc_attr_e( 'Mga dokumento', 'ang-bantayog' ); ?>">
+          <?php
+          $ab_doc_page = get_page_by_path( 'aklatan-ng-dokumento' );
+          get_template_part( 'template-parts/section-heading', null, array(
+            'title' => __( 'Aklatan ng Dokumento', 'ang-bantayog' ),
+            'sub'   => __( 'Mga patakaran, ulat, at nakaraang isyu na maaaring i-download.', 'ang-bantayog' ),
+            'url'   => $ab_doc_page ? get_permalink( $ab_doc_page ) : get_post_type_archive_link( 'ab_document' ),
+          ) );
+          ?>
+          <ul class="doclist">
+            <?php while ( $ab_docs->have_posts() ) : $ab_docs->the_post();
+              get_template_part( 'template-parts/card-document' );
+            endwhile; ?>
+          </ul>
+        </section>
+      <?php endif;
+      wp_reset_postdata();
+    endif; ?>
 
-  <?php $isports = angbantayog_section_query( 'isports', 3 ); ?>
-  <section class="container band" id="isports">
-    <div class="band-head">
-      <h2><?php esc_html_e( 'Isports', 'ang-bantayog' ); ?></h2>
-      <div class="slider-nav">
-        <button class="slider-btn" data-slider="isports" data-dir="prev" aria-label="<?php esc_attr_e( 'Naunang kuwento', 'ang-bantayog' ); ?>">&#8249;</button>
-        <button class="slider-btn" data-slider="isports" data-dir="next" aria-label="<?php esc_attr_e( 'Susunod na kuwento', 'ang-bantayog' ); ?>">&#8250;</button>
-      </div>
-    </div>
-    <div class="slider" data-slider-track="isports">
-      <?php if ( $isports->have_posts() ) : $i = 0; while ( $isports->have_posts() ) : $isports->the_post(); ?>
-        <article class="hero-card hero-card--wide slide<?php echo 0 === $i ? ' is-active' : ''; ?>">
-          <a class="hero-card__media" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true">
-            <?php angbantayog_post_thumb( get_the_ID(), 'angbantayog-featured', $i + 3, '' ); ?>
-          </a>
-          <div class="hero-card__body">
-            <p class="tag-row"><span class="tag tag--solid"><?php esc_html_e( 'Isports', 'ang-bantayog' ); ?></span></p>
-            <h3 class="hero-card__title"><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
-            <p class="byline"><?php echo esc_html( get_the_author() ); ?> &middot; <?php echo esc_html( get_the_date() ); ?></p>
-          </div>
-        </article>
-      <?php $i++; endwhile; wp_reset_postdata(); else : ?>
-        <article class="hero-card hero-card--wide slide is-active">
-          <div class="hero-card__media"><img src="<?php echo esc_url( angbantayog_fallback_thumb( 3 ) ); ?>" alt="" /></div>
-          <div class="hero-card__body">
-            <p class="tag-row"><span class="tag tag--solid"><?php esc_html_e( 'Isports', 'ang-bantayog' ); ?></span></p>
-            <h3 class="hero-card__title"><?php esc_html_e( 'Wala pang balitang isports', 'ang-bantayog' ); ?></h3>
-          </div>
-        </article>
-      <?php endif; ?>
-    </div>
-  </section>
+    <?php /* ================================ 10. Partners ============================= */ ?>
+    <?php if ( angbantayog_show( 'ab_show_partners' ) ) :
+      $ab_partners = angbantayog_cpt_query( 'ab_partner', 12, array( 'orderby' => 'title', 'order' => 'ASC' ) );
+      if ( $ab_partners->have_posts() ) : ?>
+        <section class="partners" aria-label="<?php esc_attr_e( 'Mga kasosyo', 'ang-bantayog' ); ?>">
+          <h2 class="partners__title"><?php esc_html_e( 'Mga Kasosyo at Kaalyado', 'ang-bantayog' ); ?></h2>
+          <ul class="partners__strip">
+            <?php while ( $ab_partners->have_posts() ) : $ab_partners->the_post();
+              $ab_purl = get_post_meta( get_the_ID(), '_ab_partner_url', true );
+              ?>
+              <li>
+                <?php if ( $ab_purl ) : ?><a href="<?php echo esc_url( $ab_purl ); ?>" target="_blank" rel="noopener"><?php endif; ?>
+                  <?php if ( has_post_thumbnail() ) : ?>
+                    <?php the_post_thumbnail( 'angbantayog-thumb', array( 'alt' => esc_attr( get_the_title() ) ) ); ?>
+                  <?php else : ?>
+                    <span class="partners__name"><?php the_title(); ?></span>
+                  <?php endif; ?>
+                <?php if ( $ab_purl ) : ?></a><?php endif; ?>
+              </li>
+            <?php endwhile; ?>
+          </ul>
+        </section>
+      <?php endif;
+      wp_reset_postdata();
+    endif; ?>
 
+  </div><!-- .container -->
 </main>
 
 <?php get_footer(); ?>

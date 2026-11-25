@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 700" role="img" aria-label="Ang Bantayog cover">
+  <defs>
+    <linearGradient id="cg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3a060b"/><stop offset="55%" stop-color="#6b0f1a"/><stop offset="1" stop-color="#8c2230"/>
+    </linearGradient>
+    <pattern id="cp" width="56" height="56" patternUnits="userSpaceOnUse">
+      <path d="M6 6h44v44H18V18h22" fill="none" stroke="#d4af37" stroke-width="2.2" opacity=".2"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="700" fill="url(#cg)"/>
+  <rect width="1600" height="700" fill="url(#cp)"/>
+  <g opacity=".5" fill="#f4d35e">
+    <path d="M800 150l26 52v250h-52V202z"/>
+    <rect x="752" y="402" width="96" height="22" rx="5"/>
+    <rect x="728" y="424" width="144" height="24" rx="5"/>
+    <rect x="700" y="448" width="200" height="28" rx="6"/>
+  </g>
+</svg>

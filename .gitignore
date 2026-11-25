@@ -1,0 +1,24 @@
+# WordPress core & config — never commit
+wp-config.php
+wp-content/uploads/
+wp-content/cache/
+wp-content/upgrade/
+wp-content/backup*/
+*.sql
+*.sql.gz
+
+# Build artefacts
+*.zip
+node_modules/
+vendor/
+.sass-cache/
+*.map
+
+# Editor / OS junk
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
