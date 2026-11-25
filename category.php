@@ -1,134 +1,63 @@
 <?php
 /**
- * Template for ALL category archive pages
- * (Opinyon, Lathalain, Isports, Multimedia, etc.)
+ * Generic archive: date, post-type and fallback archives.
+ *
+ * @package Ang_Bantayog
  */
+
 get_header();
-
-// Get the category object
-$cat = get_queried_object();
-
-// Safely get slug and name
-$slug = isset($cat->slug) ? $cat->slug : '';
-$name = isset($cat->name) ? $cat->name : single_cat_title('', false);
-
-$paged = ( get_query_var( 'paged' ) ) ? get_query_var( 'paged' ) : 1;
-
-// Query for main content
-$cat_posts = new WP_Query( array(
-	'category_name'  => $slug,
-	'posts_per_page' => 6,
-	'paged'          => $paged,
-	'post_status'    => 'publish'
-) );
-
-// Query for sidebar tabs
-$bago    = new WP_Query( array( 
-	'posts_per_page' => 4, 
-	'category_name' => $slug, 
-	'orderby' => 'date', 
-	'no_found_rows' => true 
-) );
-
-$laganap = new WP_Query( array( 
-	'posts_per_page' => 4, 
-	'category_name' => $slug, 
-	'orderby' => 'comment_count', 
-	'no_found_rows' => true 
-) );
 ?>
+<main class="archive" id="top">
+  <div class="container">
 
-<main class="archive-page">
+    <header class="archive__head">
+      <h1 class="archive__title"><?php the_archive_title(); ?></h1>
+      <?php
+      $ab_desc = get_the_archive_description();
+      if ( $ab_desc ) : ?>
+        <div class="archive__desc"><?php echo wp_kses_post( $ab_desc ); ?></div>
+      <?php endif; ?>
+    </header>
 
-  <div class="container" style="margin-top: 24px;">
-    <div class="balita-layout">
+    <?php if ( have_posts() ) : ?>
+      <?php
+      $ab_is_doc  = is_post_type_archive( 'ab_document' );
+      $ab_is_fact = is_post_type_archive( 'ab_factcheck' );
+      ?>
 
-      <!-- Main: 3-column card grid -->
-      <div class="balita-main">
-        <div class="balita-card-row">
-          <?php if ( $cat_posts->have_posts() ) : 
-            while ( $cat_posts->have_posts() ) : $cat_posts->the_post(); ?>
-            <article class="balita-card">
-              <a class="balita-card__media" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true">
-                <?php the_post_thumbnail( 'angbantayog-wide', array( 'loading' => 'lazy' ) ); ?>
-                <span class="tag tag--solid tag--pinned"><?php echo esc_html( $name ); ?></span>
-              </a>
-              <h3 class="balita-card__title"><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
-              <p class="balita-card__meta">
-                <?php echo esc_html( get_the_author() ); ?> &middot; <?php echo esc_html( get_the_date() ); ?> &middot; <?php echo esc_html( angbantayog_reading_time( get_the_ID() ) ); ?>
-              </p>
-              <div class="balita-card__excerpt">
-                <?php echo wp_trim_words( get_the_excerpt(), 20, '&hellip;' ); ?>
-              </div>
-              <a class="balita-card__more" href="<?php the_permalink(); ?>"><?php esc_html_e( 'Read More', 'ang-bantayog' ); ?></a>
-            </article>
-          <?php endwhile; wp_reset_postdata(); else : ?>
-            <p class="empty"><?php esc_html_e( 'Wala pang artikulo sa seksyong ito.', 'ang-bantayog' ); ?></p>
-          <?php endif; ?>
+      <?php if ( $ab_is_doc ) : ?>
+        <ul class="doclist">
+          <?php while ( have_posts() ) : the_post(); get_template_part( 'template-parts/card-document' ); endwhile; ?>
+        </ul>
+      <?php elseif ( $ab_is_fact ) : ?>
+        <div class="grid grid--3">
+          <?php while ( have_posts() ) : the_post(); get_template_part( 'template-parts/card-factcheck' ); endwhile; ?>
         </div>
-
-        <?php if ( $cat_posts->max_num_pages > 1 ) : ?>
-          <div class="pagination" style="margin: 24px 0;">
-            <?php echo paginate_links( array( 'total' => $cat_posts->max_num_pages, 'current' => $paged ) ); ?>
-          </div>
-        <?php endif; ?>
-      </div>
-
-      <!-- Sidebar: promo + tabs -->
-      <aside class="balita-sidebar">
-        <div class="balita-promo">
-          <img src="<?php echo esc_url( get_template_directory_uri() . '/assets/dspc-na.gif' ); ?>"
-               alt="<?php esc_attr_e( 'DSPC Na!', 'ang-bantayog' ); ?>"
-               loading="lazy" />
+      <?php else : ?>
+        <div class="grid grid--3">
+          <?php
+          $ab_i = 0;
+          while ( have_posts() ) :
+            the_post();
+            set_query_var( 'ab_card_index', $ab_i++ );
+            get_template_part( 'template-parts/card-article' );
+          endwhile;
+          ?>
         </div>
+      <?php endif; ?>
 
-        <div class="balita-tabs" id="balitaTabs">
-          <div class="balita-tabs__bar">
-            <button class="balita-tabs__btn is-active" data-tab="napapanahon">
-              <?php esc_html_e( 'Napapanahon', 'ang-bantayog' ); ?>
-            </button>
-            <button class="balita-tabs__btn" data-tab="laganap">
-              <?php esc_html_e( 'Laganap', 'ang-bantayog' ); ?>
-            </button>
-          </div>
+      <?php
+      the_posts_pagination( array(
+        'mid_size'  => 2,
+        'prev_text' => '&larr; ' . esc_html__( 'Nakaraan', 'ang-bantayog' ),
+        'next_text' => esc_html__( 'Susunod', 'ang-bantayog' ) . ' &rarr;',
+      ) );
+      ?>
 
-          <div class="balita-tabs__panel is-active" id="tab-napapanahon">
-            <?php if ( $bago->have_posts() ) : while ( $bago->have_posts() ) : $bago->the_post(); ?>
-              <article class="balita-side-item">
-                <a class="balita-side-item__media" href="<?php the_permalink(); ?>">
-                  <?php the_post_thumbnail( 'thumbnail', array( 'loading' => 'lazy' ) ); ?>
-                </a>
-                <div class="balita-side-item__body">
-                  <p class="eyebrow"><?php echo esc_html( implode( ', ', angbantayog_badge_labels( get_the_ID() ) ) ); ?></p>
-                  <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
-                </div>
-              </article>
-            <?php endwhile; wp_reset_postdata(); else : ?>
-              <p class="empty"><?php esc_html_e( 'Wala pang bagong artikulo.', 'ang-bantayog' ); ?></p>
-            <?php endif; ?>
-          </div>
+    <?php else : ?>
+      <p class="empty"><?php esc_html_e( 'Wala pang nilalaman sa seksyong ito.', 'ang-bantayog' ); ?></p>
+    <?php endif; ?>
 
-          <div class="balita-tabs__panel" id="tab-laganap" hidden>
-            <?php if ( $laganap->have_posts() ) : while ( $laganap->have_posts() ) : $laganap->the_post(); ?>
-              <article class="balita-side-item">
-                <a class="balita-side-item__media" href="<?php the_permalink(); ?>">
-                  <?php the_post_thumbnail( 'thumbnail', array( 'loading' => 'lazy' ) ); ?>
-                </a>
-                <div class="balita-side-item__body">
-                  <p class="eyebrow"><?php echo esc_html( implode( ', ', angbantayog_badge_labels( get_the_ID() ) ) ); ?></p>
-                  <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
-                </div>
-              </article>
-            <?php endwhile; wp_reset_postdata(); else : ?>
-              <p class="empty"><?php esc_html_e( 'Wala pang laganap na kuwento.', 'ang-bantayog' ); ?></p>
-            <?php endif; ?>
-          </div>
-        </div>
-      </aside>
-
-    </div>
   </div>
-
 </main>
-
 <?php get_footer(); ?>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Ang Bantayog seal">
+  <defs>
+    <pattern id="fret" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M2 2h16v16H6V6h8" fill="none" stroke="#d4af37" stroke-width="2.4"/>
+    </pattern>
+    <clipPath id="ring">
+      <path d="M100 4a96 96 0 1 0 .1 0zM100 28a72 72 0 1 1-.1 0z"/>
+    </clipPath>
+  </defs>
+  <circle cx="100" cy="100" r="98" fill="#6b0f1a"/>
+  <g clip-path="url(#ring)"><rect width="200" height="200" fill="url(#fret)" opacity=".85"/></g>
+  <circle cx="100" cy="100" r="74" fill="none" stroke="#d4af37" stroke-width="3"/>
+  <circle cx="100" cy="100" r="68" fill="#3a060b"/>
+  <!-- monument / obelisk -->
+  <path d="M100 42l9 18v58h-18V60z" fill="#f4d35e"/>
+  <path d="M100 42l9 18h-18z" fill="#fff8e7"/>
+  <rect x="84" y="118" width="32" height="9" rx="2" fill="#d4af37"/>
+  <rect x="76" y="127" width="48" height="10" rx="2" fill="#f4d35e"/>
+  <rect x="68" y="137" width="64" height="12" rx="3" fill="#d4af37"/>
+  <path d="M60 149h80l-6 10H66z" fill="#fff8e7"/>
+  <circle cx="100" cy="100" r="98" fill="none" stroke="#f4d35e" stroke-width="4"/>
+</svg>
