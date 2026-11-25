@@ -7,7 +7,6 @@
 
   var root = document.documentElement;
   var STORAGE_KEY = 'angbantayog-theme';
-  var DEFAULT_THEME = 'dark';
 
   /* ---------- Light / dark mode ------------------------------------------ */
   function applyTheme(mode) {
@@ -30,9 +29,14 @@
     try { localStorage.setItem(STORAGE_KEY, mode); } catch (e) {}
   }
 
-  /* Dark is the house style, so a first-time visitor gets dark regardless of
-     their OS setting. Anyone who picks a mode keeps their choice. */
-  applyTheme(storedTheme() || DEFAULT_THEME);
+  var systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+  applyTheme(storedTheme() || (systemDark && systemDark.matches ? 'dark' : 'light'));
+
+  if (systemDark && systemDark.addEventListener) {
+    systemDark.addEventListener('change', function (e) {
+      if (!storedTheme()) applyTheme(e.matches ? 'dark' : 'light');
+    });
+  }
 
   document.addEventListener('click', function (e) {
     var btn = e.target.closest && e.target.closest('#themeToggle');
@@ -43,7 +47,7 @@
   });
 
   document.addEventListener('DOMContentLoaded', function () {
-    applyTheme(root.getAttribute('data-theme') || DEFAULT_THEME);
+    applyTheme(root.getAttribute('data-theme') || 'light');
 
     /* ---------- Ticker: duplicate items so the loop has no gap ----------- */
     var track = document.querySelector('#daglianTrack');
@@ -98,41 +102,16 @@
       });
     }
 
-    /* ---------- Search panel ---------------------------------------------- */
     var searchToggle = document.querySelector('#searchToggle');
     var searchPanel = document.querySelector('#searchPanel');
-
     if (searchToggle && searchPanel) {
-      var setSearch = function (open) {
+      searchToggle.addEventListener('click', function () {
+        var open = searchPanel.hidden;
         searchPanel.hidden = !open;
         searchToggle.setAttribute('aria-expanded', String(open));
         if (open) {
           var field = searchPanel.querySelector('input[type="search"]');
           if (field) field.focus();
-        }
-      };
-
-      searchToggle.addEventListener('click', function (e) {
-        e.stopPropagation();
-        setSearch(searchPanel.hidden);
-      });
-
-      /* Clicks inside the panel are for using it, not dismissing it. */
-      searchPanel.addEventListener('click', function (e) {
-        e.stopPropagation();
-      });
-
-      /* Anywhere else on the page closes it. */
-      document.addEventListener('click', function () {
-        if (!searchPanel.hidden) setSearch(false);
-      });
-
-      /* Escape closes it and hands focus back to the button, so keyboard
-         users are not dropped at the top of the document. */
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && !searchPanel.hidden) {
-          setSearch(false);
-          searchToggle.focus();
         }
       });
     }
@@ -149,51 +128,3 @@
     }
   });
 })();
-
-document.addEventListener("DOMContentLoaded", function() {
-    
-    // 1. Target BOTH your post cards AND your text elements
-    var elementsToReveal = document.querySelectorAll(
-        // Your post/card containers
-        'article.hero-card, article.pick-card, article.card, article.list-item, ' +
-        'article.kolum-card, article.lente-card, article.opinion-lead, article.side-item, ' +
-        'SECTION.container, article.post, .hentry, .post, main article, ' +
-        
-        // YOUR TEXT ELEMENTS
-        'main p, main h1, main h2, main h3, main h4, .entry-content p, .entry-content h2'
-    );
-
-    // 2. Add the base hidden class to all of them
-    elementsToReveal.forEach(function(el) {
-        // We add 'reveal-up' for cards, and 'reveal-text' for text
-        if (el.tagName === 'P' || el.tagName.startsWith('H')) {
-            el.classList.add('reveal-text');
-        } else {
-            el.classList.add('reveal-up');
-        }
-    });
-
-    // 3. Set up the Observer
-    var observerOptions = {
-        root: null,
-        rootMargin: '0px',
-        threshold: 0.15 // Triggers when 15% of the text is on screen
-    };
-
-    var revealObserver = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('is-visible');
-            } else {
-                entry.target.classList.remove('is-visible');
-            }
-        });
-    }, observerOptions);
-
-    // 4. Start observing
-    elementsToReveal.forEach(function(el) {
-        revealObserver.observe(el);
-    });
-    
-    console.log('Scroll reveal active on ' + elementsToReveal.length + ' elements (including text)');
-});
